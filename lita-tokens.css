@@ -1,0 +1,63 @@
+/* LiTa Support — D homologada · tokens de diseño v1 (sep 2026)
+   Fuente: lienzo "LiTa Support — Exploración de diseño 2026", artboards DH-* y Prototipo.
+   Regla: el ocre #C68A3D es el ÚNICO acento. Nunca como color de texto sobre blanco
+   (contraste insuficiente); para texto ocre usar --lita-ocre-texto. */
+
+:root {
+  /* Tinta y neutros */
+  --lita-tinta: #15181A;          /* texto principal, botones oscuros, tarjeta "en curso" */
+  --lita-carbon: #2A2E30;         /* carbón de marca (logo, superficies oscuras) */
+  --lita-texto-2: #5E6361;        /* texto secundario */
+  --lita-texto-3: #767B78;        /* texto terciario, íconos inactivos */
+  --lita-fondo: #FFFFFF;
+  --lita-superficie: #F7F6F3;     /* tarjetas y mosaicos */
+  --lita-superficie-2: #F4F3F0;   /* selector, campos, íconos de acceso rápido */
+  --lita-linea: #ECEAE5;
+  --lita-linea-2: #D5D2CB;        /* bordes de pendiente / punteados */
+  --lita-crema: #EDEAE4;          /* crema de marca (sobre fondos oscuros) */
+
+  /* Acento de marca */
+  --lita-ocre: #C68A3D;           /* botón primario, FAB, progreso, pasos hechos */
+  --lita-ocre-texto: #8A5A1E;     /* etiquetas/eyebrows ocre sobre blanco */
+  --lita-ocre-suave: #F4EBDD;     /* fondos suaves ocre, avatar */
+  --lita-ocre-sobre-oscuro: #E0A85E;
+  --lita-ocre-chip-texto: #6B4A1F;
+
+  /* Estados */
+  --lita-rojo: #A8331F;           /* bloqueado / crítica */
+  --lita-rojo-vivo: #D3452F;      /* punto de alerta sobre oscuro */
+  --lita-rojo-suave: #FFF5F2;
+  --lita-rojo-borde: #F2C4B9;
+  --lita-rojo-texto: #8E2D1C;
+  --lita-rojo-sobre-oscuro: #F0A38F;
+  --lita-verde: #1F5A2B;          /* en norma / completo / atendida */
+  --lita-verde-suave: #E1EEDD;
+
+  /* Tipografía (la misma pila del sitio litasupport.com) */
+  --lita-fuente: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, "Noto Sans", Arial, sans-serif;
+  --lita-peso-titulo: 800;
+  --lita-tracking-titulo: -0.03em;
+  --lita-tracking-eyebrow: 0.12em;   /* eyebrows: 11–12 px, 700, MAYÚSCULAS, color --lita-ocre-texto */
+
+  /* Radios */
+  --lita-r-chip: 10px;
+  --lita-r-sm: 12px;     /* botones compactos, íconos */
+  --lita-r-md: 14px;     /* campos, selector */
+  --lita-r-lg: 16px;     /* botones principales */
+  --lita-r-xl: 18px;     /* tarjetas y mosaicos */
+  --lita-r-2xl: 22px;    /* tarjetas destacadas (alerta, detalle) */
+
+  /* Medidas */
+  --lita-margen: 20px;        /* margen lateral de pantalla móvil */
+  --lita-toque-min: 44px;     /* objetivo táctil mínimo */
+  --lita-boton: 54px;         /* alto del botón primario */
+  --lita-fab: 58px;           /* botón central Registrar */
+}
+
+/* Etiquetas de estado — siempre el mismo par color/fondo en app y panel */
+.lita-chip { font: 700 11px/1 var(--lita-fuente); padding: 4px 9px; border-radius: var(--lita-r-chip); white-space: nowrap; }
+.lita-chip--bloqueado  { color: #FFFFFF;                    background: var(--lita-rojo); }
+.lita-chip--revision   { color: var(--lita-ocre-chip-texto); background: var(--lita-ocre-suave); }
+.lita-chip--en-curso   { color: var(--lita-tinta);           background: var(--lita-ocre-sobre-oscuro); }
+.lita-chip--norma      { color: var(--lita-verde);           background: var(--lita-verde-suave); }
+.lita-chip--programado { color: var(--lita-texto-2);         background: var(--lita-superficie-2); }

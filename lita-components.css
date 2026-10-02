@@ -1,0 +1,113 @@
+/* LiTa Support — D homologada · componentes base v1 (Fase 2, Bloque 1, 25 sep 2026)
+   Encargo: ~/DMZ/lita-design-handoff/HANDOFF.md sección 5. Consume SOLO variables de
+   lita-tokens.css (que se carga antes que este archivo) — ningún valor nuevo inventado.
+   Namespace "lita-" para no chocar con las clases existentes del portal (kale/juice/etc,
+   sistema "REDESIGN 2026" que este cambio reemplaza en las pantallas operativas). */
+
+/* ── Encabezado de operador ── */
+.lita-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.lita-header-eyebrow{font:700 11px/1 var(--lita-fuente);letter-spacing:var(--lita-tracking-eyebrow);text-transform:uppercase;color:var(--lita-ocre-texto);display:block;}
+.lita-header-title{margin:0;font:800 28px/1.15 var(--lita-fuente);letter-spacing:var(--lita-tracking-titulo);color:var(--lita-tinta);}
+.lita-header-avatar{position:relative;flex-shrink:0;width:46px;height:46px;border-radius:23px;border:0;background:var(--lita-ocre-suave);color:var(--lita-ocre-texto);font:800 14px var(--lita-fuente);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.lita-header-avatar .lita-dot-alerta{position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:6px;background:var(--lita-rojo-vivo);border:2px solid var(--lita-fondo);box-sizing:border-box;}
+
+/* ── Barra de turno (tarjeta oscura) ── */
+.lita-turnobar{margin-top:14px;background:var(--lita-tinta);border-radius:var(--lita-r-xl);padding:14px 16px;display:flex;flex-direction:column;gap:10px;color:#fff;}
+.lita-turnobar-row{display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.72);}
+.lita-turnobar-now{color:var(--lita-ocre-sobre-oscuro);font-weight:700;}
+.lita-turnobar-track{height:8px;border-radius:4px;background:rgba(255,255,255,.18);position:relative;}
+.lita-turnobar-fill{height:8px;border-radius:4px;background:var(--lita-ocre-sobre-oscuro);}
+.lita-turnobar-marker{position:absolute;top:-3px;width:14px;height:14px;border-radius:7px;background:var(--lita-rojo-vivo);border:2px solid var(--lita-tinta);box-sizing:border-box;}
+
+/* ── Selector de dos segmentos ── */
+.lita-segmented{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:var(--lita-superficie-2);border-radius:var(--lita-r-md);padding:4px;gap:0;}
+.lita-segmented button{height:42px;border:0;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:6px;font:600 14px var(--lita-fuente);cursor:pointer;background:transparent;color:var(--lita-texto-2);}
+.lita-segmented button.on{background:var(--lita-fondo);box-shadow:0 1px 3px rgba(21,24,26,.12);color:var(--lita-tinta);font-weight:800;}
+
+/* ── Timeline vertical (Mi turno) ── */
+.lita-timeline-row{display:flex;gap:14px;}
+.lita-timeline-rail{display:flex;flex-direction:column;align-items:center;width:26px;flex-shrink:0;}
+.lita-timeline-dot{width:26px;height:26px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-sizing:border-box;}
+.lita-timeline-dot--done{background:var(--lita-ocre);}
+.lita-timeline-dot--current{background:var(--lita-ocre-suave);border:2px solid var(--lita-ocre);}
+.lita-timeline-dot--alerta{background:var(--lita-rojo);box-shadow:0 0 0 5px rgba(168,51,31,.18);}
+.lita-timeline-dot--pendiente{background:var(--lita-fondo);border:2px solid var(--lita-linea-2);}
+.lita-timeline-line{flex-grow:1;width:2px;min-height:14px;}
+.lita-timeline-line--on{background:var(--lita-ocre);}
+.lita-timeline-line--off{background:var(--lita-linea);}
+.lita-timeline-body{flex-grow:1;display:flex;flex-direction:column;gap:2px;padding:2px 0 16px 0;}
+.lita-timeline-head{display:flex;justify-content:space-between;align-items:center;}
+.lita-timeline-hora{font:800 12px var(--lita-fuente);color:var(--lita-tinta);}
+.lita-timeline-hora--dim{color:var(--lita-texto-3);}
+.lita-timeline-title{font:700 15px var(--lita-fuente);color:var(--lita-tinta);}
+.lita-timeline-title--dim{color:var(--lita-texto-3);}
+.lita-timeline-meta{font-size:12px;color:var(--lita-texto-3);}
+.lita-timeline-alerta{flex-grow:1;background:var(--lita-rojo-suave);border:1.5px solid var(--lita-rojo-borde);border-radius:var(--lita-r-2xl);padding:12px 14px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.lita-timeline-alerta-valor{font:800 16px var(--lita-fuente);}
+.lita-timeline-alerta-sub{font-size:12px;color:var(--lita-texto-2);}
+.lita-timeline-alerta-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+
+/* ── Mosaico 2×N de módulos ("primero lo urgente") ── */
+.lita-mosaico-label{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 10px;}
+.lita-mosaico-label span:first-child{font:700 13px var(--lita-fuente);color:var(--lita-tinta);}
+.lita-mosaico-label span:last-child{font-size:12px;color:var(--lita-texto-2);}
+.lita-mosaico{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.lita-mosaico-card{background:var(--lita-superficie);border:1.5px solid transparent;border-radius:var(--lita-r-xl);padding:12px 14px;display:flex;flex-direction:column;gap:8px;color:var(--lita-tinta);min-height:100px;box-sizing:border-box;text-align:left;cursor:pointer;font-family:var(--lita-fuente);}
+.lita-mosaico-card--alerta{background:var(--lita-rojo-suave);border-color:var(--lita-rojo-borde);}
+.lita-mosaico-card-top{display:flex;justify-content:space-between;align-items:flex-start;width:100%;}
+.lita-mosaico-icon{width:36px;height:36px;border-radius:11px;background:var(--lita-fondo);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lita-mosaico-icon--alerta{background:var(--lita-rojo);color:#fff;}
+.lita-mosaico-title{font:700 14px/1.2 var(--lita-fuente);}
+
+/* ── Tarjeta de alerta expandida (detalle) ── */
+.lita-alerta-hero{border-radius:var(--lita-r-2xl);background:var(--lita-tinta);color:#fff;padding:18px;display:flex;flex-direction:column;gap:6px;}
+.lita-alerta-hero-top{display:flex;justify-content:space-between;align-items:center;}
+.lita-alerta-hero-valor{display:flex;align-items:flex-end;justify-content:space-between;}
+.lita-alerta-hero-num{font:800 76px/.95 var(--lita-fuente);letter-spacing:-.05em;color:var(--lita-rojo-sobre-oscuro);}
+.lita-alerta-hero-info{display:flex;flex-direction:column;align-items:flex-end;padding-bottom:8px;}
+.lita-alerta-hero-nombre{font:800 17px var(--lita-fuente);}
+.lita-alerta-hero-limite{font-size:12px;color:rgba(255,255,255,.72);}
+
+/* ── Fila de requisito (ícono, título, estado, "Listo") ── */
+.lita-requisito{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--lita-r-lg);border:1.5px solid var(--lita-linea);background:var(--lita-fondo);width:100%;box-sizing:border-box;text-align:left;cursor:pointer;font-family:var(--lita-fuente);}
+.lita-requisito-icon{width:40px;height:40px;border-radius:var(--lita-r-sm);background:var(--lita-superficie-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lita-requisito-body{display:flex;flex-direction:column;flex-grow:1;min-width:0;}
+.lita-requisito-title{font:700 15px var(--lita-fuente);color:var(--lita-tinta);}
+.lita-requisito-sub{font-size:12px;color:var(--lita-texto-2);}
+.lita-requisito-listo{font:700 13px var(--lita-fuente);color:var(--lita-ocre-texto);flex-shrink:0;}
+
+/* ── Barra inferior de 5 posiciones + FAB central ──
+   Fix real encontrado con captura a 390px (ESTADO.md 12.4, 2ª corrida): faltaba
+   position:fixed -- sin eso la barra quedaba en el flujo normal del documento, muy por
+   debajo del pliegue, en vez de fija al fondo del viewport (mismo patrón que ya usaba
+   .mobile-nav: display:none por defecto, display en el breakpoint móvil). */
+.lita-navbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:400;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;border-top:1px solid var(--lita-linea);padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 10px) 6px;background:var(--lita-fondo);box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+@media (max-width:768px){
+  .lita-navbar{display:grid;}
+  .lita-screen{padding-bottom:96px !important;}
+}
+.lita-navbar button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px var(--lita-fuente);cursor:pointer;color:var(--lita-texto-3);padding-bottom:7px;}
+.lita-navbar button.on{color:var(--lita-tinta);font-weight:700;padding-bottom:0;}
+.lita-navbar button.on .lita-navbar-underline{width:16px;height:3px;border-radius:2px;background:var(--lita-ocre);}
+.lita-navbar-icon-wrap{position:relative;display:flex;}
+.lita-navbar-dot{position:absolute;top:-2px;right:-4px;width:10px;height:10px;border-radius:5px;background:var(--lita-rojo);}
+.lita-navbar-fab{width:var(--lita-fab);height:var(--lita-fab);border-radius:29px;background:var(--lita-ocre);display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 8px 20px rgba(198,138,61,.45);border:4px solid var(--lita-fondo);box-sizing:border-box;color:var(--lita-tinta);}
+
+/* ── Botón primario (54px) / botón apagado ── */
+.lita-btn-primaria{width:100%;height:var(--lita-boton);border-radius:var(--lita-r-lg);border:0;background:var(--lita-ocre);color:var(--lita-tinta);font:800 15px var(--lita-fuente);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;}
+.lita-btn-secundaria{width:100%;height:var(--lita-boton);border-radius:var(--lita-r-lg);border:1.5px solid var(--lita-linea);background:var(--lita-fondo);color:var(--lita-tinta);font:700 15px var(--lita-fuente);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;}
+.lita-btn-primaria[disabled],.lita-btn-primaria.lita-off{background:var(--lita-superficie-2);color:var(--lita-texto-3);cursor:not-allowed;box-shadow:none;}
+.lita-btn-falta{display:block;margin-top:8px;text-align:center;font:700 12px var(--lita-fuente);color:var(--lita-rojo-texto);}
+
+/* ── Bloque 2, fix real encontrado con captura a 390px (ver ESTADO.md 12.4): la topbar
+   heredada (marca/campanita/chip de usuario/"Inicio"/"Salir") queda 100% redundante con
+   el header + navbar nuevos y ensuciaba visualmente la pantalla D homologada -- se oculta
+   solo en móvil, donde la navegación nueva ya cubre cada una de sus funciones. ── */
+@media (max-width:768px){
+  .topbar{display:none !important;}
+}
+
+/* ── Superficie / tipografía base para pantallas D homologada ── */
+.lita-screen{font-family:var(--lita-fuente);color:var(--lita-tinta);background:var(--lita-fondo);}
+.lita-screen h1,.lita-screen h2{font-weight:var(--lita-peso-titulo);letter-spacing:var(--lita-tracking-titulo);}
+.lita-eyebrow{font:700 11px/1 var(--lita-fuente);letter-spacing:var(--lita-tracking-eyebrow);text-transform:uppercase;color:var(--lita-ocre-texto);}
