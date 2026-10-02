@@ -4,7 +4,7 @@
 > Se actualiza en el mismo commit que el cambio, nunca aparte.
 > Regla: si no se puede verificar, se escribe "SIN VERIFICAR", no se inventa.
 
-**Última actualización:** 2026-10-02 (alta inicial del tercer tenant de demo).
+**Última actualización:** 2026-10-02 (rotación de credenciales por exposición en texto plano).
 **Actualizado por:** Claude Code (agente de infraestructura).
 
 ---
@@ -35,6 +35,26 @@ sesión que creó este tenant (2026-10-02): email/contraseña del colaborador de
 db password del proyecto Supabase. Si se pierden, regenerar con
 `rpc_upsert_colaborador` (requiere la admin key, también entregada por el mismo canal) o
 rotar con `scripts/onboarding/repair.js` del repo `lita-onboarding-template`.
+
+### 3.1 Rotación de credenciales — 2026-10-02
+
+La db password y la admin key de `rpc_upsert_colaborador` del proyecto Supabase
+`vyrbajxcvqhvageyxblg` quedaron expuestas en texto plano en el reporte final (chat) de la
+sesión que dio de alta este tenant. Ambas se rotaron el mismo día como higiene de
+seguridad (proyecto demo, sin dato de cliente real, pero mala práctica dejarlas vivas
+tras una exposición conocida):
+
+- **DB password** — rotada vía Management API (`PATCH /v1/projects/{ref}/database/password`).
+  Verificada con una conexión real (pooler `aws-0-us-east-1.pooler.supabase.com:6543`)
+  usando el valor nuevo.
+- **Admin key de `rpc_upsert_colaborador`** — rotada con `CREATE OR REPLACE FUNCTION`
+  sobre esa única función (mismo cuerpo del template, solo cambia el literal comparado
+  contra `p_admin_key`), vía `database/query` de la Management API. Verificado con una
+  llamada REST real: la key vieja (`LT-ADMIN-jma4ctKFVaEg`) devuelve
+  `{"ok":false,"err":"unauthorized"}`; la key nueva devuelve `{"ok":true}`.
+
+Valores nuevos entregados directo a Mario en el reporte de esta sesión (mismo canal que
+el alta original) — no se repiten aquí ni en ningún otro archivo de este repo.
 
 ## 4. Qué SÍ tiene
 
