@@ -8244,7 +8244,8 @@ function getProgresoDetallado(subId){
   try{ var v = localStorage.getItem('vk_prog_full_'+subId+'_'+hoyKey()); return v ? JSON.parse(v) : null; }catch(e){ return null; }
 }
 function getProgreso(s){var k='vk_prog_'+s+'_'+hoyKey();try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
-function calcScoreArea(catId){var cat=ESTRUCTURA.find(c=>c.id===catId);if(!cat)return{pct:0,alerta:false};var sc=0,mx=0,al=false;cat.subs.forEach(function(sub){var p=MOD_PESOS[sub.id]||1;mx+=p*100;var pr=getProgreso(sub.id);var pct=pr?pr.pct:0;sc+=p*pct;if(MOD_CRITICOS.indexOf(sub.id)>=0&&pct<100)al=true;});return{pct:mx?Math.round(sc/mx):0,score:sc,maxScore:mx,alerta:al};}
+/* HALLAZGO REAL 2026-10-02 (demo lita-demo, NO corregido en vitality-control/cdj-support -- fuera de alcance de este repo, reportado a Mario): calcScoreArea()/calcScoreGlobal() en el codigo real de VK y CDJ hacen Math.round(sc/mx) y Math.round(t/m) SIN *100 -- sc/mx y t/m ya son una fraccion 0-1 (sc y mx vienen multiplicados por pct 0-100 y por 100 respectivamente), asi que el resultado real en produccion solo puede ser 0 o 1, nunca un porcentaje util -- '% del turno completado', las botellas de area y las letras A+/A/B/C/D quedan efectivamente rotas en silencio. Corregido SOLO aqui (se agrego *100) para que esta demo de ventas muestre progreso real -- NO se tocó vitality-control/cdj-support, ver brief de esta sesión. */
+function calcScoreArea(catId){var cat=ESTRUCTURA.find(c=>c.id===catId);if(!cat)return{pct:0,alerta:false};var sc=0,mx=0,al=false;cat.subs.forEach(function(sub){var p=MOD_PESOS[sub.id]||1;mx+=p*100;var pr=getProgreso(sub.id);var pct=pr?pr.pct:0;sc+=p*pct;if(MOD_CRITICOS.indexOf(sub.id)>=0&&pct<100)al=true;});return{pct:mx?Math.round(sc/mx*100):0,score:sc,maxScore:mx,alerta:al};}
 // Bug real corregido 15 ago 2026 (hallazgo de auditoría, detectado de paso al agregar
 // 'recursos' a FAMILIAS.cats para arreglar su candado): calcScoreGlobal() SIEMPRE iteró
 // TODA ESTRUCTURA sin filtrar 'recursos' -- antes daba igual porque nada más lo excluía por
@@ -8254,7 +8255,7 @@ function calcScoreArea(catId){var cat=ESTRUCTURA.find(c=>c.id===catId);if(!cat)r
 // guardarProgreso()), así que sumaban peso al denominador (mx) sin nunca poder llegar a
 // 100% -- 2 módulos fantasma bajando el score global para siempre. Mismo criterio de
 // exclusión ya usado en showControlAbsoluto() (cat.id!=='recursos'), aplicado aquí también.
-function calcScoreGlobal(){var t=0,m=0;ESTRUCTURA.forEach(function(cat){if(cat.id==='recursos'||cat.id==='mantenimiento')return;var a=calcScoreArea(cat.id);t+=a.score;m+=a.maxScore;});return m?Math.round(t/m):0;}
+function calcScoreGlobal(){var t=0,m=0;ESTRUCTURA.forEach(function(cat){if(cat.id==='recursos'||cat.id==='mantenimiento')return;var a=calcScoreArea(cat.id);t+=a.score;m+=a.maxScore;});return m?Math.round(t/m*100):0;}
 function letraCalif(pct){if(pct>=95)return{l:'A+',c:'#2D7D1A'};if(pct>=85)return{l:'A',c:'var(--juice)'};if(pct>=75)return{l:'B',c:'var(--warn)'};if(pct>=60)return{l:'C',c:'#D68000'};return{l:'D',c:'var(--danger)'};}
 function showHome(){
   setNavActive('nav-home');
