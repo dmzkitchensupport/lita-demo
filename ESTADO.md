@@ -74,6 +74,31 @@ rotar con `scripts/onboarding/repair.js` del repo `lita-onboarding-template`.
 2. **Logo real de "Fonda Raíz"** — se usa el ícono genérico de marca LiTa (tinta/ocre),
    no hay logo de cliente porque el cliente es ficticio. No aplica preparar uno.
 
+## 6.1 🔴 Hallazgo real — bug heredado de Vitality Kitchen / Corazón de Jaguar (NO corregido ahí)
+
+Verificando por qué el dashboard de este demo mostraba "1% del turno completado" pese a
+tener datos de muestra reales con 72% de avance promedio, se encontró la causa exacta en
+`calcScoreArea()`/`calcScoreGlobal()` (línea ~8247 de `portal.html`): ambas hacen
+`Math.round(sc/mx)` / `Math.round(t/m)` — `sc/mx` y `t/m` ya son una fracción 0–1 (el
+numerador y denominador están multiplicados por `pct` 0–100 y por `100` respectivamente),
+así que el resultado real **solo puede ser 0 o 1, nunca un porcentaje útil**. Esto afecta
+"% del turno completado", las "botellas" de progreso por área, y las letras A+/A/B/C/D
+(`letraCalif()` nunca puede pasar de 'D' si `gl` solo vale 0 o 1).
+
+**Confirmado con `grep` que el mismo código, byte por byte, vive hoy en
+`~/dev/vitality-control/portal.html` y `~/dev/cdj-support/portal.html`** — es decir, muy
+probablemente el dashboard de los dos clientes reales (Vitality Kitchen, Corazón de
+Jaguar) tiene el mismo problema en producción ahora mismo. **No se tocó ninguno de esos
+dos repos** (fuera de alcance de esta sesión, instrucción explícita del brief). Se
+corrigió **solo en este repo** (`lita-demo`, agregando `*100` a ambas funciones) porque
+sin eso el demo de ventas no puede cumplir su propósito (mostrar progreso real). Ver
+comentario en el propio `portal.html` justo arriba de `calcScoreArea`.
+
+**Pendiente de decisión de Mario**: si esto se confirma también roto en VK/CDJ, decidir
+si se corrige ahí (afecta directamente lo que ve el cliente pagador) — no se hizo aquí
+porque está fuera del alcance de este encargo y porque tocar producción de un cliente
+real requiere su confirmación explícita.
+
 ## 7. Qué sigue
 
 - Los datos de muestra quedaron sembrados con fechas fijas (2026-09-26 a 2026-10-02,
