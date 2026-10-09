@@ -127,6 +127,8 @@ async function _oqValidarPinActor(colaboradorId, pin) {
   try {
     var r = await vkSB.rpc('rpc_validar_pin_actor', { p_colaborador_id: colaboradorId, p_pin: pin });
     if (r && r.error) return { estado: 'sin_conexion' };
+    /* Seguridad Fase B: sin sesión válida no es "PIN inválido" -- reintentar tras re-login. */
+    if (r && r.data && r.data.motivo === 'sin_sesion') return { estado: 'sin_conexion' };
     if (r && r.data && r.data.ok) return { estado: 'ok', datos: r.data };
     return { estado: 'invalido' };
   } catch (e) { return { estado: 'sin_conexion' }; }

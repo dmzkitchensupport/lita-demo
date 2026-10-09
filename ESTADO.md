@@ -9,6 +9,21 @@
 
 ---
 
+## 2026-10-08 (noche) — Banco de pruebas de Seguridad Fase B (RAMA `feat/seguridad-fase-b`, SIN merge)
+
+- **Base del demo alineada al schema real de VK** (aditivo, sin borrar datos de Fonda Raíz):
+  tablas/columnas faltantes, RPCs de VK, bucket `fotos-operativas` y políticas/grants idénticos a
+  VK (`supabase/sql/fase-b/00_alinear_schema_demo_a_vk.sql`). Antes el demo no tenía bucket ni
+  varias RPCs que su propio portal llama.
+- **F1 de Fase B aplicado y se queda** (tabla `lita_sesiones`, `rpc_login` con token, RPCs de
+  sesión): compatible con el portal de `main`. **F2 se aplicó, se probó y se revirtió** para no
+  romper las demos en vivo con el portal de `main`; con la rama publicada se vuelve a aplicar
+  (`~/dmz/entregables/LiTa_Seguridad_v1/faseB/vk/F2_0*.sql`).
+- **Esta rama** porta al demo los cambios del portal de VK (token, revalidación, pre-pantalla de
+  permisos, `foto_subida` con `path`, pagos por RPC). QA Puppeteer 21/21 y curl de la anon key en
+  `~/dmz/entregables/LiTa_Seguridad_v1/faseB/evidencia/`. Datos y cuentas de QA borrados
+  (1 colaborador, 0 sesiones, 0 objetos nuevos en Storage).
+
 ## 1. Qué es esto
 
 Tercer tenant de LiTa Support, 100% real (no mockup estático), para que Mario haga demos

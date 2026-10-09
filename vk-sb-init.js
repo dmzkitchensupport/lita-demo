@@ -2,9 +2,31 @@
 var VK_SB_URL='https://vyrbajxcvqhvageyxblg.supabase.co';
 var VK_SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5cmJhanhjdnFodmFnZXl4YmxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjE1ODUsImV4cCI6MjEwNjQ5NzU4NX0.rKr44_UaIi6-hf9fUlXOLJxwaDh4q2dPpHIlnMLNxKA';
 var vkSB=null;
+
+/* Seguridad Fase B (8 oct 2026): sesión de servidor. rpc_login emite un token opaco; se
+ * guarda en este dispositivo y viaja en el header x-lita-session de TODA petición a
+ * Supabase (tablas, RPCs y Storage). Con F2 aplicado, las políticas RLS exigen que ese token
+ * sea válido (no revocado, no expirado, colaborador activo) — la anon key sola ya no lee nada.
+ * El token en claro solo vive aquí; en la base solo queda su sha256 (tabla lita_sesiones). */
+var LITA_SESION_TOKEN_KEY='vk_sesion_token';
+function litaToken(){ try{ return localStorage.getItem(LITA_SESION_TOKEN_KEY)||''; }catch(e){ return ''; } }
+function litaGuardarToken(t){ try{ if(t) localStorage.setItem(LITA_SESION_TOKEN_KEY,t); else localStorage.removeItem(LITA_SESION_TOKEN_KEY); }catch(e){} }
+function _litaFetch(input,init){
+  init=init||{};
+  var t=litaToken();
+  /* Edge Functions (encuestas-ocr, vk-diagnostico-ia) declaran su propia lista CORS de headers
+   * y validan con su propia llave: no se les manda el token (el preflight lo rechazaría). */
+  var u=(typeof input==='string')?input:((input&&input.url)||'');
+  if(t && u.indexOf('/functions/v1/')<0){
+    var h=new Headers(init.headers||(input&&input.headers)||{});
+    h.set('x-lita-session',t);
+    init=Object.assign({},init,{headers:h});
+  }
+  return fetch(input,init);
+}
 function initSB(){
   if(vkSB)return;
-  try{ if(window.supabase&&window.supabase.createClient){ vkSB=window.supabase.createClient(VK_SB_URL,VK_SB_KEY); } }catch(e){}
+  try{ if(window.supabase&&window.supabase.createClient){ vkSB=window.supabase.createClient(VK_SB_URL,VK_SB_KEY,{global:{fetch:_litaFetch}}); } }catch(e){}
 }
 function _fMX(){ return new Date().toLocaleDateString('en-CA',{timeZone:'America/Mexico_City'}); }
 

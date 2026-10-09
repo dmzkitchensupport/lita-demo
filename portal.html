@@ -421,13 +421,13 @@ body,#app{background:#F6F6F4 !important;}
      local faltara en algún deploy raro. -->
 <script src="./vendor/supabase.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';document.head.appendChild(s);"></script>
 <script src="./vendor/chart.umd.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';document.head.appendChild(s);"></script>
-<script src="vk-sb-init.js"></script>
+<script src="vk-sb-init.js?v=faseb1"></script>
 <!-- Cola de validación de PIN offline (14 sep 2026, decisión de Mario tras incidente real
      con cliente): apertura/cierre de turno y certificación de capacitación NUNCA deben
      aplicarse sin validar el PIN de verdad contra el servidor. Va antes del <script>
      principal para que encolarValidacionPin/oqRegistrarAplicador/oqIntentarSincronizar
      ya existan cuando ese script los referencia. -->
-<script src="offline-queue.js"></script>
+<script src="offline-queue.js?v=faseb1"></script>
 <script>
 /* ════════════════════════════════════
    ESTRUCTURA CATEGORÍAS + SUBCATS
@@ -1124,6 +1124,9 @@ function doLogin(){
     loginServidor(email, pass).then(function(srv) {
       if(srv && srv.ok) {
         var partes = ((srv.nombre||'') + ' ' + (srv.apellido||'')).trim();
+        /* Seguridad Fase B: token de sesión de servidor (rpc_login lo emite desde F1). Se
+         * guarda ANTES de launchApp para que la primera lectura ya lo lleve. */
+        if(typeof litaGuardarToken === 'function') litaGuardarToken(srv.sesion || '');
         launchApp({id:'srv_'+email, name: partes || email, email: email, rol: srv.rol||'admin', active:true, hidden: !!srv.hidden, pass:''});
         return;
       }
@@ -1262,6 +1265,7 @@ function launchApp(user){
           if(typeof checkTurnoAbiertoTarde === 'function') checkTurnoAbiertoTarde();
           if(typeof sincronizarEncuestasPendientes === 'function') sincronizarEncuestasPendientes();
           if(typeof sbDownProgreso === 'function') sbDownProgreso().then(function(c){ if(c && typeof activeSub === 'undefined') showHome(); });
+          if(typeof _litaRevalidarPeriodica === 'function') _litaRevalidarPeriodica(false); /* Fase B: cada 5 min */
         }, 60000);
         if(typeof checkWeeklyReport === 'function') checkWeeklyReport();
         if(typeof checkTicketsEscalacion === 'function') checkTicketsEscalacion();
@@ -1277,7 +1281,22 @@ function launchApp(user){
   }, 400);
 }
 
-function doLogout(){
+function doLogout(motivoMsg){
+  /* Seguridad Fase B: revoca la sesión de servidor de este dispositivo (best-effort; si no
+   * hay red, el token local se borra igual y la sesión caduca sola por inactividad). */
+  /* La bitácora agrupada pendiente se manda primero (con la sesión todavía viva); la sesión
+   * se revoca 1.5 s después. Si en ese lapso alguien inicia otra sesión, no se toca su token. */
+  var _tokSalida = (typeof litaToken === 'function') ? litaToken() : '';
+  if(typeof _flushActModulosTodos === 'function'){ try{ _flushActModulosTodos(); }catch(e){} }
+  if(_tokSalida){
+    setTimeout(function(){
+      try{
+        fetch(VK_SB_URL + '/rest/v1/rpc/rpc_logout', { method:'POST', keepalive:true, body:'{}',
+          headers:{ apikey:VK_SB_KEY, Authorization:'Bearer '+VK_SB_KEY, 'Content-Type':'application/json', 'x-lita-session':_tokSalida } }).catch(function(){});
+      }catch(e){}
+      if(typeof litaToken === 'function' && litaToken() === _tokSalida) litaGuardarToken('');
+    }, 1500);
+  }
   CU=null;
   try{ localStorage.removeItem('vk_sesion'); }catch(e){}
   // Logout explícito = "ya terminé aquí" -- no debe filtrar dónde estabas al siguiente
@@ -1288,6 +1307,45 @@ function doLogout(){
   document.getElementById('login-email').value='';
   document.getElementById('login-pass').value='';
   document.getElementById('login-error').classList.remove('show');
+  if(typeof motivoMsg === 'string' && motivoMsg){
+    var _le = document.getElementById('login-error'); _le.textContent = motivoMsg; _le.classList.add('show');
+  }
+}
+
+/* Seguridad Fase B — revalidación de la sesión de servidor (rpc_sesion_validar).
+ * Devuelve {estado:'ok', datos} | {estado:'invalida', motivo} | {estado:'sin_red'} |
+ * {estado:'sin_soporte'} (la base todavía no tiene F1: se conserva el comportamiento anterior). */
+async function _litaValidarSesionServidor(){
+  try{
+    if(typeof initSB === 'function') initSB();
+    if(typeof vkSB === 'undefined' || !vkSB) return {estado:'sin_red'};
+    var timeoutMarker = {_timeout:true};
+    var timeoutP = new Promise(function(res){ setTimeout(function(){ res(timeoutMarker); }, 8000); });
+    var r = await Promise.race([vkSB.rpc('rpc_sesion_validar'), timeoutP]);
+    if(r === timeoutMarker) return {estado:'sin_red'};
+    if(r && r.error){
+      var code = String(r.error.code||''), msg = String(r.error.message||'');
+      if(code === 'PGRST202' || /Could not find the function|rpc_sesion_validar/i.test(msg)) return {estado:'sin_soporte'};
+      return {estado:'sin_red'};
+    }
+    if(r && r.data && r.data.ok) return {estado:'ok', datos:r.data};
+    return {estado:'invalida', motivo:(r && r.data && r.data.motivo) || 'invalida'};
+  }catch(e){ return {estado:'sin_red'}; }
+}
+var LITA_MSG_SESION_TERMINADA = 'Tu sesión terminó. Vuelve a entrar con tu correo y contraseña.';
+var _litaUltimaValidacion = 0;
+async function _litaRevalidarPeriodica(forzar){
+  if(!CU || CU._modoLocal) return;
+  var ahora = Date.now();
+  if(!forzar && ahora - _litaUltimaValidacion < 5*60*1000) return;
+  _litaUltimaValidacion = ahora;
+  var v = await _litaValidarSesionServidor();
+  if(v.estado === 'invalida' && CU){ doLogout(LITA_MSG_SESION_TERMINADA); }
+}
+if(typeof document !== 'undefined'){
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible'){ try{ _litaRevalidarPeriodica(false); }catch(e){} }
+  });
 }
 
 /* Acceso */
@@ -2057,6 +2115,11 @@ async function _validarPinActorFoto(colaboradorId, onResuelto) {
   }
   try {
     var r = await vkSB.rpc('rpc_validar_pin_actor', {p_colaborador_id: colaboradorId, p_pin: pin});
+    if(r && r.data && r.data.motivo === 'sin_sesion') {
+      if(errEl) { errEl.textContent = LITA_MSG_SESION_TERMINADA; errEl.style.display = 'block'; }
+      if(typeof _litaRevalidarPeriodica==='function') _litaRevalidarPeriodica(true);
+      return;
+    }
     if(r && r.data && r.data.ok) {
       document.getElementById('pinActorFotoModal')?.remove();
       onResuelto(colaboradorId);
@@ -2089,6 +2152,7 @@ async function _validarPinActorNoBloqueante(colaboradorId, onResuelto, tipoOffli
   try {
     var r = await vkSB.rpc('rpc_validar_pin_actor', {p_colaborador_id: colaboradorId, p_pin: pin});
     if(r && r.error) { encolarYCerrar(); return; } /* respuesta con error de red disfrazada -- fail-safe */
+    if(r && r.data && r.data.motivo === 'sin_sesion') { if(typeof _litaRevalidarPeriodica==='function') _litaRevalidarPeriodica(true); encolarYCerrar(); return; }
     if(r && r.data && r.data.ok) {
       document.getElementById('pinActorFotoModal')?.remove();
       onResuelto(colaboradorId);
@@ -4467,7 +4531,82 @@ function capturarFoto(contexto, callback, opts) {
     capturarFotoInputFallback(contexto, callback, opts);
     return;
   }
-  abrirCamaraD(contexto, callback, opts);
+  _litaPermisosAntesDeCamara(function(){ abrirCamaraD(contexto, callback, opts); },
+                             function(){ capturarFoto(contexto, callback, opts); });
+}
+
+/* Pre-pantalla de permisos (decisión Tech + Diseño, 8 oct 2026, lita-support-app/ESTADO.md;
+ * basada en 03perms.png sin "PASO 2 DE 2"): se muestra la primera vez que se toma evidencia
+ * en este dispositivo y SOLO si el navegador todavía va a preguntar (permissions.query =
+ * "prompt"). El micrófono no se pide aquí (se pide aparte, al tocar dictado). Cámara negada:
+ * mensaje con la ruta a Ajustes + "Ya lo activé". Ubicación negada: no bloquea (la foto se
+ * sella con "Ubicación no disponible"). */
+var LITA_PERM_PREPANTALLA_KEY = 'lita_perm_prepantalla_v1';
+function _litaEstadoPermiso(nombre){
+  try{
+    if(!navigator.permissions || !navigator.permissions.query) return Promise.resolve('desconocido');
+    return navigator.permissions.query({name: nombre}).then(function(r){ return r.state; }, function(){ return 'desconocido'; });
+  }catch(e){ return Promise.resolve('desconocido'); }
+}
+function _litaPermisosAntesDeCamara(continuar, reintentar){
+  Promise.all([_litaEstadoPermiso('camera'), _litaEstadoPermiso('geolocation')]).then(function(st){
+    var cam = st[0], geo = st[1];
+    if(cam === 'denied'){ _litaMostrarCamaraNegada(reintentar); return; }
+    var yaVista = false; try{ yaVista = localStorage.getItem(LITA_PERM_PREPANTALLA_KEY) === '1'; }catch(e){}
+    if(!yaVista && (cam === 'prompt' || geo === 'prompt')){ _litaMostrarPrepantallaPermisos(continuar); return; }
+    continuar();
+  });
+}
+function _litaPermFila(icono, titulo, sub){
+  return '<div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;background:#F4F1EC;">'
+    + '<span style="width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-' + icono + '" style="font-size:20px;color:#15181A"></i></span>'
+    + '<span><span style="display:block;font-weight:800;font-size:15px;color:#15181A;">' + titulo + '</span>'
+    + '<span style="display:block;font-size:12.5px;color:#5E6361;">' + sub + '</span></span></div>';
+}
+function _litaMostrarPrepantallaPermisos(continuar){
+  if(document.getElementById('litaPermModal')) return;
+  var ov = document.createElement('div');
+  ov.id = 'litaPermModal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:#fff;display:flex;flex-direction:column;font-family:var(--lita-fuente,-apple-system,sans-serif);padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 20px);box-sizing:border-box;overflow-y:auto;';
+  ov.innerHTML =
+      '<div style="position:relative;height:170px;border-radius:22px;background:#F4E9DA;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'
+    + '<span style="position:absolute;width:220px;height:220px;border-radius:50%;background:#EAD7BD;"></span>'
+    + '<span style="position:absolute;width:140px;height:140px;border-radius:50%;background:#DEBF95;"></span>'
+    + '<span style="position:relative;width:72px;height:72px;border-radius:50%;background:#C68A3D;display:flex;align-items:center;justify-content:center;"><i class="ti ti-map-pin" style="font-size:28px;color:#15181A"></i></span>'
+    + '</div>'
+    + '<h2 style="margin:22px 0 0;font-size:26px;line-height:1.15;font-weight:800;color:#15181A;">Para que tu registro sea prueba</h2>'
+    + '<p style="margin:8px 0 0;font-size:14px;line-height:1.45;color:#5E6361;">Cada evidencia se sella con la cámara de la app, coordenadas y hora del servidor.</p>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;padding-top:18px;">'
+    + _litaPermFila('camera', 'Cámara', 'La galería queda bloqueada')
+    + _litaPermFila('map-pin', 'Ubicación', 'Para sellar cada evidencia')
+    + '</div>'
+    + '<div style="flex:1;min-height:20px;"></div>'
+    + '<button id="litaPermContinuar" style="height:54px;border-radius:16px;border:0;background:#C68A3D;color:#15181A;font-weight:800;font-size:15px;cursor:pointer;width:100%;">Continuar</button>'
+    + '<button id="litaPermAhoraNo" style="height:48px;border-radius:16px;border:0;background:transparent;color:#5E6361;font-weight:700;font-size:14px;cursor:pointer;width:100%;margin-top:6px;">Ahora no</button>';
+  document.body.appendChild(ov);
+  document.getElementById('litaPermContinuar').onclick = function(){
+    try{ localStorage.setItem(LITA_PERM_PREPANTALLA_KEY, '1'); }catch(e){}
+    ov.remove(); continuar();
+  };
+  document.getElementById('litaPermAhoraNo').onclick = function(){ ov.remove(); };
+}
+function _litaMostrarCamaraNegada(reintentar){
+  if(document.getElementById('litaCamNegadaModal')) return;
+  var ua = navigator.userAgent || '';
+  var ruta = /iPhone|iPad|iPod/i.test(ua)
+    ? 'En tu iPhone: Ajustes > Safari > Cámara > Permitir (o el ícono "aA" de la barra de direcciones > Ajustes del sitio web > Cámara).'
+    : 'En Android: toca el candado junto a la dirección (o Ajustes > Apps > tu navegador o LiTa > Permisos) > Cámara > Permitir.';
+  var bg = document.createElement('div');
+  bg.className = 'usr-modal-bg'; bg.id = 'litaCamNegadaModal'; bg.style.zIndex = '10000';
+  bg.innerHTML = '<div class="usr-modal" style="max-width:420px"><div class="usr-modal-head"><span class="usr-modal-title">La cámara está bloqueada</span></div>'
+    + '<div class="usr-modal-body" style="font-size:14px;line-height:1.5;color:#15181A">'
+    + '<p style="margin:0 0 10px">Para registrar evidencia necesitas permitir la cámara. La galería sigue bloqueada para que cada foto sea del momento.</p>'
+    + '<p style="margin:0;color:#5E6361">' + ruta + '</p></div>'
+    + '<div class="usr-modal-footer"><button class="btn btn-ghost" id="litaCamNegadaNo">Ahora no</button>'
+    + '<button class="btn btn-kale" id="litaCamNegadaSi">Ya lo activé</button></div></div>';
+  document.body.appendChild(bg);
+  document.getElementById('litaCamNegadaNo').onclick = function(){ bg.remove(); };
+  document.getElementById('litaCamNegadaSi').onclick = function(){ bg.remove(); if(typeof reintentar === 'function') reintentar(); };
 }
 
 function capturarFotoInputFallback(contexto, callback, opts) {
@@ -4575,15 +4714,22 @@ function abrirCamaraD(contexto, callback, opts) {
 
   gpsPromise.then(function(gps) {
     var el = document.getElementById('camaraDGpsTxt');
-    if(el) el.textContent = gps ? 'GPS activo' : 'GPS no disponible';
+    if(el) el.textContent = gps ? 'GPS activo' : 'Ubicación no disponible';
   });
 
   var video = document.getElementById('camaraDVideo');
   navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then(function(s) {
     window._camaraDStream = s;
     video.srcObject = s;
-  }).catch(function() {
+  }).catch(function(err) {
     cerrarCamaraD();
+    /* Permiso de cámara negado: no se abre la galería (rompería "galería bloqueada");
+     * se explica cómo activarla. Cualquier otro error (sin cámara, cámara ocupada) conserva
+     * el respaldo de siempre. */
+    if(err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')){
+      _litaMostrarCamaraNegada(function(){ capturarFoto(contexto, callback, opts); });
+      return;
+    }
     capturarFotoInputFallback(contexto, callback, opts);
   });
 
@@ -4616,7 +4762,7 @@ function abrirModalMotivo(contexto, canvas, callback, opts) {
   var tsServidor = canvas.__tsServidor;
   var gps = canvas.__gps;
   var horaSello = tsServidor ? (fechaMXDe(tsServidor) + ' · ' + horaMXDe(tsServidor) + ' · hora del servidor') : (fechaMX() + ' · ' + horaMX() + ' · hora del dispositivo');
-  var gpsTxt = gps ? ('GPS verificado (±' + Math.round(gps.acc||0) + 'm)') : 'Sin GPS';
+  var gpsTxt = gps ? ('GPS verificado (±' + Math.round(gps.acc||0) + 'm)') : 'Ubicación no disponible';
   var nombreActor = (typeof CU !== 'undefined' && CU && CU.name) ? CU.name : '';
   var sello = '<div style="border:1.5px solid #C68A3D;border-radius:14px;padding:12px 14px;margin-bottom:14px;background:#FBF5EC">'
     + '<div class="lita-eyebrow">Sello LiTa</div>'
@@ -7887,6 +8033,9 @@ async function validarPinServidor(pin) {
     var r = await Promise.race([vkSB.rpc('rpc_validar_pin', { p_pin: pin }), timeoutP]);
     if(r === timeoutMarker) return {ok:false, motivo:'sin_conexion'};
     if(r.error || !r.data) return {ok:false, motivo:'sin_conexion'};
+    /* Fase B: sin sesión válida el servidor no valida PINs -- no es "PIN incorrecto"; se trata
+     * como sin conexión (la cola lo reintenta tras volver a entrar) y se revalida la sesión. */
+    if(!r.data.ok && r.data.motivo === 'sin_sesion'){ if(typeof _litaRevalidarPeriodica==='function') _litaRevalidarPeriodica(true); return {ok:false, motivo:'sin_conexion'}; }
     if(!r.data.ok) return {ok:false, motivo:'credencial'};
     return r.data;
   } catch(e) { return {ok:false, motivo:'sin_conexion'}; }
@@ -8137,7 +8286,9 @@ async function subirFotoStorage(contexto, dataUrl, _esReintento, _onFalloReal) {
       return null;
     }
     var pub  = vkSB.storage.from('fotos-operativas').getPublicUrl(path);
-    if(typeof sbInsertActividad === 'function') sbInsertActividad('foto_subida',{contexto:contexto});
+    /* Ruta exacta del objeto (spec lita-support-app ESTADO 8 oct): liga la foto/firma a quien
+     * la subió, para que rpc_eliminar_cuenta_* borre solo lo suyo por ruta exacta. */
+    if(typeof sbInsertActividad === 'function') sbInsertActividad('foto_subida',{contexto:contexto, path:path});
     return pub && pub.data ? pub.data.publicUrl : null;
   } catch(e) {
     var _msg = String((e && e.message) || e || '');
@@ -11807,7 +11958,8 @@ async function cargarControlAbsoluto(){
     vkSB.from('scores_diarios').select('fecha,area,score_pct').gte('fecha',desdeISO).lte('fecha',hoyISO),
     vkSB.from('alertas').select('titulo,severidad,fecha,created_at,modulo_id,datos').eq('severidad','critica').gte('fecha',desdeISO).order('created_at',{ascending:false}).limit(6),
     vkSB.from('vk_config').select('key,value'),
-    vkSB.from('vk_pagos').select('mes,monto,moneda,estado,fecha_pago').order('created_at',{ascending:false}).limit(6),
+    /* Fase B: vk_pagos ya no se lee directo (cerrada a anon el 8 oct); RPC con sesión de admin. */
+    vkSB.rpc('rpc_pagos_recientes', { p_limite: 6 }),
     vkSB.rpc('rpc_listar_colaboradores'),
     // Evidencia por las 3 categorías reales de finalizarEvidencia() (cumplimiento/hallazgo/incidencia),
     // no solo hallazgo/incidencia -- la vista aprobada muestra las 3, honesto con "vacío" si no hay.
@@ -12757,11 +12909,32 @@ async function _restaurarSesion(){
     var user = JSON.parse(raw);
     if(!user || !user.email) return;
     if(typeof initSB === 'function'){ try{ initSB(); }catch(e){} }
-    if(typeof vkSB !== 'undefined' && vkSB){
-      var r = await vkSB.rpc('rpc_listar_colaboradores');
-      if(r && r.data){
-        var actual = r.data.find(function(c){ return (c.email||'').toLowerCase() === user.email.toLowerCase(); });
-        if(!actual || !actual.activo){ localStorage.removeItem('vk_sesion'); return; }
+    /* Seguridad Fase B (8 oct 2026): la sesión guardada en el dispositivo ya no basta. Se
+     * revalida contra el servidor (token + colaborador activo) ANTES de entrar:
+     * - sesión inválida/revocada/expirada o cuenta desactivada -> se borra y va al login;
+     * - sin red -> entra con la sesión local (la operación offline sigue igual) y se
+     *   revalida en cuanto haya red (intervalo de 60 s / al volver a la app);
+     * - base sin F1 todavía -> comportamiento anterior (activo vía rpc_listar_colaboradores). */
+    if(!user._modoLocal){
+      var v = await _litaValidarSesionServidor();
+      if(v.estado === 'invalida'){
+        try{ localStorage.removeItem('vk_sesion'); }catch(e){}
+        if(typeof litaGuardarToken === 'function') litaGuardarToken('');
+        var _le = document.getElementById('login-error');
+        if(_le){ _le.textContent = LITA_MSG_SESION_TERMINADA; _le.classList.add('show'); }
+        return;
+      }
+      if(v.estado === 'ok' && v.datos){
+        var partes = ((v.datos.nombre||'') + ' ' + (v.datos.apellido||'')).trim();
+        user = Object.assign({}, user, { name: partes || user.name, rol: v.datos.rol || user.rol, hidden: !!v.datos.hidden });
+        _litaUltimaValidacion = Date.now();
+      }
+      if(v.estado === 'sin_soporte' && typeof vkSB !== 'undefined' && vkSB){
+        var r = await vkSB.rpc('rpc_listar_colaboradores');
+        if(r && r.data){
+          var actual = r.data.find(function(c){ return (c.email||'').toLowerCase() === user.email.toLowerCase(); });
+          if(!actual || !actual.activo){ localStorage.removeItem('vk_sesion'); return; }
+        }
       }
     }
     launchApp(user);
