@@ -4,10 +4,23 @@
 > Se actualiza en el mismo commit que el cambio, nunca aparte.
 > Regla: si no se puede verificar, se escribe "SIN VERIFICAR", no se inventa.
 
-**Última actualización:** 2026-10-02 (rotación de credenciales por exposición en texto plano).
+**Última actualización:** 2026-10-09 (publica el portal único).
 **Actualizado por:** Claude Code (agente de infraestructura).
 
 ---
+
+## 2026-10-09 — Este repo ahora publica el portal único (`dmzkitchensupport/lita-portal`)
+
+- `portal.html`, `vk-sb-init.js`, `offline-queue.js`, `sw.js`, CSS, `vendor/`, `icons/` y
+  `manifest.json` **ya no se editan aquí**: los genera el build de `lita-portal` con
+  `tenants/demo.json` y se publican con `tools/publicar.mjs demo` (QA estático + E2E de 25 pasos
+  en verde como requisito). `lita-build.json` dice qué versión y commit está publicada.
+- Corrige que el login y la barra superior decían "vitality kitchen", y quita el lema, el logo y
+  los checklists de otro cliente. Trae Seguridad Fase B (sesión de servidor) desde el núcleo.
+- **Respaldo:** rama `legacy` = portal heredado (72b116d).
+- **Reversa (probada el 9 oct: 24 s hasta servir el portal anterior):** en `lita-portal`,
+  `node tools/revertir.mjs demo --confirmar`. Emergencia: `git checkout legacy -- .` y push a `main`.
+- La rama `feat/seguridad-fase-b` de este repo queda superada por el núcleo; no se fusiona.
 
 ## 1. Qué es esto
 
