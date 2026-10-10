@@ -1,15 +1,25 @@
 {
-  "name": "Lita Support",
-  "short_name": "Lita Support",
+  "name": "Fonda Raíz · LiTa Support",
+  "short_name": "Fonda Raíz",
   "description": "Portal operativo de turnos, checklists y evidencia fotográfica — LiTa Support",
   "start_url": "./portal.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#FEFEFC",
+  "background_color": "#FAF7ED",
   "theme_color": "#15181A",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
