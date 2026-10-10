@@ -1,7 +1,7 @@
 {
   "slug": "demo",
   "version": "1.0.0",
-  "commit": "1e80354",
+  "commit": "cf7e834",
   "archivos": {
     "icons/apple-touch-icon.png": "81c307b6b6268e9f",
     "icons/icon-192.png": "6e2fd0172508ba54",
@@ -10,8 +10,8 @@
     "lita-tokens.css": "3254ecb45ea40a24",
     "manifest.json": "7cd54dcc1552a753",
     "offline-queue.js": "6f3ce1ee65f32d9d",
-    "portal.html": "c87f86581c73be2e",
-    "sw.js": "ffd9b88ddf8eb9d8",
+    "portal.html": "456177b58ef7152b",
+    "sw.js": "8ef15909dd40b90f",
     "vendor/chart.umd.min.js": "48444a82d4edcb5b",
     "vendor/supabase.js": "84ee9bf45695c1dd",
     "vk-sb-init.js": "5744e9ca1f794389"

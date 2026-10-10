@@ -426,13 +426,13 @@ body,#app{background:#F6F6F4 !important;}
   }
  },
  mantenimiento: false,
- build: "1e80354"
+ build: "cf7e834"
 };</script>
 <script src="./vendor/supabase.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';document.head.appendChild(s);"></script>
 <script src="./vendor/chart.umd.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';document.head.appendChild(s);"></script>
-<script src="vk-sb-init.js?v=1.0.0-1e80354"></script>
+<script src="vk-sb-init.js?v=1.0.0-cf7e834"></script>
 
-<script src="offline-queue.js?v=1.0.0-1e80354"></script>
+<script src="offline-queue.js?v=1.0.0-cf7e834"></script>
 <script>const ESTRUCTURA = [ {
  id: "cocina",
  name: "Cocina",
@@ -5390,16 +5390,28 @@ function saveDestinatarios(d) {
  localStorage.setItem("vk_destinatarios", JSON.stringify(d));
 }
 
+var ROL_LABELS = {
+ dmz: "LiTa Support",
+ propietario: "Propietario",
+ gerente: "Gerente",
+ chef: "Chef",
+ supervisor: "Supervisor"
+};
+
+function rolLabel(rol) {
+ return ROL_LABELS[rol] || rol;
+}
+
 function renderConfigAlertas(el, cat, sub) {
  var destinatarios = getDestinatarios();
  var roles = typeof getRoles === "function" ? getRoles() : [];
  var html = '<div class="fp fade-in"><div style="padding:16px 20px">' + '<div class="usr-header">' + '<div><span class="usr-title">Configuración de Alertas</span></div>' + '<button class="btn btn-kale btn-sm" onclick="abrirAgregarDestinatario()"><i class="ti ti-plus" style="font-size:13px"></i> Destinatario</button>' + "</div>" + '<div style="background:var(--surface-1);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">' + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px">Qué recibe cada rol</div>' + '<div style="display:grid;grid-template-columns:140px repeat(3,1fr);gap:6px;font-size:11px">' + '<div style="font-weight:600;color:var(--text-muted)">Rol</div>' + '<div style="font-weight:600;color:var(--text-muted);text-align:center">🚨 Crítica</div>' + '<div style="font-weight:600;color:var(--text-muted);text-align:center">⚠️ Importante</div>' + '<div style="font-weight:600;color:var(--text-muted);text-align:center">ℹ️ Informativa</div>' + Object.entries(NOTIF_CONFIG.critica).map(function(e) {
   var rol = e[0], crit = NOTIF_CONFIG.critica[rol], imp = NOTIF_CONFIG.importante[rol], info = NOTIF_CONFIG.informativa[rol];
-  return '<div style="font-size:12px;font-weight:500;padding:4px 0">' + rol + "</div>" + [ "E" + (crit.email ? "✓" : "✗") + " WA" + (crit.wa ? "✓" : "✗"), "E" + (imp.email ? "✓" : "✗") + " WA" + (imp.wa ? "✓" : "✗"), "E" + (info.email ? "✓" : "✗") + " WA" + (info.wa ? "✓" : "✗") ].map(function(t) {
+  return '<div style="font-size:12px;font-weight:500;padding:4px 0">' + rolLabel(rol) + "</div>" + [ "E" + (crit.email ? "✓" : "✗") + " WA" + (crit.wa ? "✓" : "✗"), "E" + (imp.email ? "✓" : "✗") + " WA" + (imp.wa ? "✓" : "✗"), "E" + (info.email ? "✓" : "✗") + " WA" + (info.wa ? "✓" : "✗") ].map(function(t) {
    return '<div style="text-align:center;font-size:11px;color:var(--text-secondary)">' + t + "</div>";
   }).join("");
  }).join("") + "</div></div>" + '<div class="usr-field-section">Destinatarios configurados</div>' + '<div style="display:flex;flex-direction:column;gap:8px">' + destinatarios.map(function(d, idx) {
-  return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:.5px solid var(--border);border-radius:8px;background:var(--surface-2);opacity:' + (d.activo ? "1" : ".5") + '">' + '<div style="flex:1">' + '<div style="font-size:13px;font-weight:500;color:var(--text-primary)">' + d.nombre + "</div>" + '<div style="font-size:12px;color:var(--text-secondary)">' + d.email + "</div>" + "</div>" + '<span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:10px;background:var(--surface-1);border:.5px solid var(--border)">' + d.rol + "</span>" + '<button onclick="toggleDestinatario(' + idx + ')" style="background:none;border:.5px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;color:' + (d.activo ? "#15803D" : "#DC2626") + '">' + (d.activo ? "Activo" : "Inactivo") + "</button>" + '<button onclick="eliminarDestinatario(' + idx + ')" style="background:none;border:none;cursor:pointer;color:#DC2626;padding:4px"><i class="ti ti-x"></i></button>' + "</div>";
+  return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:.5px solid var(--border);border-radius:8px;background:var(--surface-2);opacity:' + (d.activo ? "1" : ".5") + '">' + '<div style="flex:1">' + '<div style="font-size:13px;font-weight:500;color:var(--text-primary)">' + d.nombre + "</div>" + '<div style="font-size:12px;color:var(--text-secondary)">' + d.email + "</div>" + "</div>" + '<span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:10px;background:var(--surface-1);border:.5px solid var(--border)">' + rolLabel(d.rol) + "</span>" + '<button onclick="toggleDestinatario(' + idx + ')" style="background:none;border:.5px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;color:' + (d.activo ? "#15803D" : "#DC2626") + '">' + (d.activo ? "Activo" : "Inactivo") + "</button>" + '<button onclick="eliminarDestinatario(' + idx + ')" style="background:none;border:none;cursor:pointer;color:#DC2626;padding:4px"><i class="ti ti-x"></i></button>' + "</div>";
  }).join("") + "</div></div></div>";
  el.innerHTML = html;
  triggerFades();

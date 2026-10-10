@@ -1,4 +1,4 @@
-const CACHE = "lita-demo-1.0.0-1e80354";
+const CACHE = "lita-demo-1.0.0-cf7e834";
 
 const SHELL = [ "./portal.html", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png" ];
 
