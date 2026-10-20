@@ -141,3 +141,19 @@ real requiere su confirmación explícita.
   una demo importante.
 - Si se activa el envío de alertas reales, re-verificar que `resendDestinatarios` siga
   siendo únicamente `mario@delamorazumaran.com` (nunca un correo de prospecto real).
+
+## 8. Guion de demo (agregado 20 oct 2026)
+
+Antes de cada demo real, recargar los datos de ejemplo: las fechas quedan fijas al día de
+carga (ver sección 7, "Qué sigue"), así que una demo semanas después muestra datos viejos.
+
+- Paso documentado: re-correr `gen-seed.js` / `seed.sql` contra el proyecto Supabase
+  `vyrbajxcvqhvageyxblg` (por ejemplo con `supabase db query --linked` desde una sesión
+  local autenticada).
+- **Hueco real (verificado 20 oct 2026):** ni `gen-seed.js` ni `seed.sql` están en este
+  repo ni en otro checkout local; solo existieron en la sesión que creó el tenant. Antes
+  de la próxima demo hay que regenerarlos y versionarlos aquí (p. ej. `scripts/seed/`),
+  para que la recarga sea un comando y no una reconstrucción.
+
+`lita-demo-semana` y `lita-rehearsal-demo` quedaron retirados y archivados el 20 oct 2026
+(orden de Mario); este repo es el único demo vigente.
