@@ -1,0 +1,8 @@
+# Pages: no publicar documentación interna de gobernanza (ESTADO/CLAUDE).
+exclude:
+  - ESTADO.md
+  - CLAUDE.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
